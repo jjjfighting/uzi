@@ -1,13 +1,10 @@
 import type { Context } from "./types";
 import path from "path";
-import fs from "fs";
 import { exist, remove } from "./core/file";
 import prompts from "prompts";
 
 export default async (ctx: Context): Promise<void> => {
-  console.log(111);
   ctx.dest = path.resolve(ctx.projectName);
-  console.log("ctx.dest: ", ctx.dest);
 
   const isExist = await exist(ctx.dest);
 

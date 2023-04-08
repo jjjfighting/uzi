@@ -5,8 +5,12 @@ import path from "path";
 import { getEnvPath } from "./core/envPath";
 import { exist, remove } from "./core/file";
 import ora from "ora";
+import { down } from "./core/http";
+import { unZip } from "./core/file";
+import fs from "fs";
+import { spawn } from "child_process";
 
-export const getTemplatePath = (input: string): string => {
+export const getTemplatePath = (input: string, registry: string): string => {
   if (/^https?:/.test(input)) {
     return input;
   }
@@ -34,9 +38,9 @@ export const getTemplatePath = (input: string): string => {
         : fullNameArr[fullNameArr.length - 1],
     branch: maybeBranch ?? initialData.branch,
   };
-  console.log("obj: ", obj);
+  initialData.temp = obj;
 
-  return initialData.registry.replace(/{(\w+)}/g, (str1, str2) => {
+  return registry.replace(/{(\w+)}/g, (str1, str2) => {
     return obj[str2];
   });
 };
@@ -47,30 +51,56 @@ export const getTemplatePath = (input: string): string => {
  * @todo remote url && local template
  */
 export default async (ctx: Context): Promise<void> => {
-  console.log(222);
   // fetch url
-  const url = await getTemplatePath(ctx.template);
-  console.log("url: ", url);
+  const url = await getTemplatePath(ctx.template, initialData.registry);
+  //  http://git.tsintergy.com:8070/frontend/adss-template-fire/-/archive/master/adss-template-fire-master.zip
+
+  const gitlabUrl = await getTemplatePath(
+    ctx.template,
+    initialData.gitlab_registry
+  );
 
   const urlHash = crypto
     .createHash("sha256")
-    .update(url)
+    .update(gitlabUrl)
     .digest("hex")
     .substring(0, 8);
 
   // template cache src
   ctx.src = path.join(getEnvPath("cache"), urlHash);
-  console.log("ctx.src: ", ctx.src);
 
-  const isExist = !!exist(ctx.src);
-  if (isExist) {
-    remove(ctx.src);
+  const isExistDir = (await exist(ctx.src)) === "dir";
+  if (isExistDir) {
+    await remove(ctx.src);
   }
+  await fs.promises.mkdir(ctx.src, { recursive: true });
 
   const spinner = ora("Download template ...").start();
 
-  setTimeout(() => spinner.stop(), 1000);
-
   try {
-  } catch (e) {}
+    // if (github) {
+    //   const temp  = await down(url);
+    //   console.log('temp: ', temp);
+    //   // 解压
+    //   await unZip(temp, ctx.src,1);
+    // }
+
+    // gitlab 直接在cache路径下 git clone // 无法指定branch
+    // http://git.tsintergy.com:8070/frontend/adss-template-fire.git
+    const gitClone = spawn("git", ["clone", gitlabUrl], { cwd: ctx.src });
+    await new Promise((resolve, rejects) => {
+      gitClone.on("close", (code) => {
+        if (code == 0) {
+          resolve("ok");
+        } else {
+          rejects("failed");
+        }
+      });
+    });
+
+    spinner.succeed("Download template complete.");
+  } catch (e) {
+    spinner.stop();
+    throw new Error(`Failed to pull ${ctx.template}, from ${gitlabUrl}`);
+  }
 };

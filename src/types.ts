@@ -15,9 +15,22 @@ export interface Context {
   /** 生成目录 */
   dest: string;
   /** 配置 */
-  config: any;
+  config: Template;
   /** prompt问答 */
   answers: any;
   /** 文件blob */
-  files: any[];
+  files: File[];
+}
+
+export interface Template {
+  /** 模板名称 */
+  name: string;
+  version?: string;
+  /** prompts问答模板 */
+  prompts?: any[];
+}
+
+export interface File {
+  path: string;
+  content: Buffer;
 }

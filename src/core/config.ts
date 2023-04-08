@@ -5,6 +5,9 @@ export const initialData = {
   // TODO gitlab, github 构成方式不同
   registry:
     "http://git.tsintergy.com:8070/{owner}/{name}/-/archive/{branch}/{name}-{branch}.zip",
+  gitlab_registry: 'http://git.tsintergy.com:8070/{owner}/{name}.git',
+  temp: Object.create(null),
+  // http://git.tsintergy.com:8070/frontend/adss-template-fire.git
   // template offlicial owner name
   official: "frontend",
   // default template branch name

@@ -10,11 +10,6 @@ cli
   .command("<template> <projectName>", "Create a project from template")
   .option("-f, --force", "Overwrite even if exist ")
   .allowUnknownOptions()
-  // .action((template, options) => {
-  //   console.log("template: ", template);
-  //   console.log("options: ", options);
-  //   // ...
-  // });
   .action(main);
 
 cli.command("list", "Show templates").action(() => {});
